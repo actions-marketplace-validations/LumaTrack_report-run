@@ -1,8 +1,7 @@
 name: "LumaTrack: Report Run"
 description: >-
   Report a workflow run (success or failure) to LumaTrack, the system of
-  record for automation value. Idempotent via external id; never fails
-  your job unless you ask it to.
+  record for automation value.
 author: LumaTrack
 branding:
   icon: activity
