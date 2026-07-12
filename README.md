@@ -20,10 +20,7 @@ you define.
 ```
 
 `if: always()` makes failures report too; they cost money and save
-nothing, and the ledger prices that honestly.
-
-`@v1` tracks the latest 1.x release, currently **v1.0.1**. Pin
-`LumaTrack/report-run@v1.0.1` instead if you want an exact version. `status` accepts the raw
+nothing, and the ledger prices that honestly. `status` accepts the raw
 `${{ job.status }}` value: `cancelled` and `skipped` book as failures
 with the reason preserved.
 
