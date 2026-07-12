@@ -1,0 +1,62 @@
+# End-to-end smoke test of the action against a live LumaTrack instance.
+name: Smoke test
+on:
+  workflow_dispatch: {}
+  pull_request: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report a success with units and metadata
+        id: success
+        uses: ./
+        with:
+          base-url: ${{ vars.LUMATRACK_URL }}
+          api-key: ${{ secrets.LUMATRACK_KEY }}
+          automation: github-actions-smoke
+          status: success
+          units: "7"
+          duration-seconds: "42"
+          external-id: smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          metadata: '{"workflow": "smoke", "ref": "${{ github.ref }}"}'
+          fail-on-error: "true"
+
+      - name: Same external id reports as deduplicated
+        id: dedupe
+        uses: ./
+        with:
+          base-url: ${{ vars.LUMATRACK_URL }}
+          api-key: ${{ secrets.LUMATRACK_KEY }}
+          automation: github-actions-smoke
+          status: success
+          external-id: smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          fail-on-error: "true"
+
+      - name: Cancelled maps to failure with a preserved reason
+        uses: ./
+        with:
+          base-url: ${{ vars.LUMATRACK_URL }}
+          api-key: ${{ secrets.LUMATRACK_KEY }}
+          automation: github-actions-smoke
+          status: cancelled
+          external-id: smoke-cancelled-${{ github.run_id }}-${{ github.run_attempt }}
+          fail-on-error: "true"
+
+      - name: Bad metadata soft-fails without breaking the job
+        uses: ./
+        with:
+          base-url: ${{ vars.LUMATRACK_URL }}
+          api-key: ${{ secrets.LUMATRACK_KEY }}
+          automation: github-actions-smoke
+          metadata: "not json"
+
+      - name: Assert outputs
+        run: |
+          [ -n "${{ steps.success.outputs.run-id }}" ] || { echo "no run-id output"; exit 1; }
+          [ "${{ steps.success.outputs.deduplicated }}" = "false" ] || { echo "first report claimed dedup"; exit 1; }
+          [ "${{ steps.dedupe.outputs.deduplicated }}" = "true" ] || { echo "second report not deduplicated"; exit 1; }
+          [ "${{ steps.dedupe.outputs.run-id }}" = "${{ steps.success.outputs.run-id }}" ] || { echo "dedupe returned a different run"; exit 1; }
+          echo "All assertions passed. Run: ${{ steps.success.outputs.run-id }}"
