@@ -21,6 +21,12 @@ fail() {
 
 BASE="${LT_BASE_URL%/}"
 
+# Default idempotency key: one run per workflow attempt. Set here rather
+# than in action.yml, whose input defaults cannot use expressions.
+if [ -z "${LT_EXTERNAL_ID:-}" ] && [ -n "${GITHUB_RUN_ID:-}" ]; then
+  LT_EXTERNAL_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
+fi
+
 # CI statuses map onto the ledger honestly: a cancelled or skipped run did
 # not do the work, so it books as a failure with the reason preserved.
 STATUS="${LT_STATUS:-success}"

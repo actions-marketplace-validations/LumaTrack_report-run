@@ -20,8 +20,8 @@ inputs:
   status:
     description: >-
       success, failure, cancelled, or skipped. Pass the job status
-      expression to report honestly: ${{ job.status }}. cancelled and
-      skipped book as failures with the reason preserved.
+      expression (job.status) to report honestly; cancelled and skipped
+      book as failures with the reason preserved.
     required: false
     default: success
   duration-seconds:
@@ -36,16 +36,16 @@ inputs:
     default: ""
   external-id:
     description: >-
-      Idempotency key; the default makes each workflow attempt one run and
-      makes retries of this step safe
+      Idempotency key; defaults to the workflow run id plus attempt, so
+      each attempt is one run and retries of this step are safe
     required: false
-    default: ${{ github.run_id }}-${{ github.run_attempt }}
+    default: ""
   failure-reason:
     description: "Root cause for failures, e.g. tests/unit or deploy/timeout"
     required: false
     default: ""
   metadata:
-    description: 'JSON object kept with the run, e.g. {"ref": "${{ github.ref }}"}'
+    description: 'JSON object kept with the run, e.g. {"ref": "refs/heads/main"}'
     required: false
     default: ""
   fail-on-error:
