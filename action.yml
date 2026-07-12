@@ -1,0 +1,83 @@
+name: "LumaTrack: Report Run"
+description: >-
+  Report a workflow run (success or failure) to LumaTrack, the system of
+  record for automation value. Idempotent via external id; never fails
+  your job unless you ask it to.
+author: LumaTrack
+branding:
+  icon: activity
+  color: green
+
+inputs:
+  base-url:
+    description: "Your LumaTrack host, e.g. https://lumatrack.example.com"
+    required: true
+  api-key:
+    description: "LumaTrack API key (store it in secrets)"
+    required: true
+  automation:
+    description: "Automation slug in LumaTrack that this workflow reports as"
+    required: true
+  status:
+    description: >-
+      success, failure, cancelled, or skipped. Pass the job status
+      expression to report honestly: ${{ job.status }}. cancelled and
+      skipped book as failures with the reason preserved.
+    required: false
+    default: success
+  duration-seconds:
+    description: "Wall-clock runtime in seconds (omit to skip)"
+    required: false
+    default: ""
+  units:
+    description: >-
+      Records/items this run processed; drives per-unit valuation when the
+      automation is valued per unit (omit to use the server default of 1)
+    required: false
+    default: ""
+  external-id:
+    description: >-
+      Idempotency key; the default makes each workflow attempt one run and
+      makes retries of this step safe
+    required: false
+    default: ${{ github.run_id }}-${{ github.run_attempt }}
+  failure-reason:
+    description: "Root cause for failures, e.g. tests/unit or deploy/timeout"
+    required: false
+    default: ""
+  metadata:
+    description: 'JSON object kept with the run, e.g. {"ref": "${{ github.ref }}"}'
+    required: false
+    default: ""
+  fail-on-error:
+    description: >-
+      Fail the job when reporting fails. Default false: a LumaTrack outage
+      should not break your pipeline.
+    required: false
+    default: "false"
+
+outputs:
+  run-id:
+    description: "The LumaTrack run id (run_...)"
+    value: ${{ steps.report.outputs.run-id }}
+  deduplicated:
+    description: "true when this external id had already been reported"
+    value: ${{ steps.report.outputs.deduplicated }}
+
+runs:
+  using: composite
+  steps:
+    - id: report
+      shell: bash
+      env:
+        LT_BASE_URL: ${{ inputs.base-url }}
+        LT_API_KEY: ${{ inputs.api-key }}
+        LT_AUTOMATION: ${{ inputs.automation }}
+        LT_STATUS: ${{ inputs.status }}
+        LT_DURATION_SECONDS: ${{ inputs.duration-seconds }}
+        LT_UNITS: ${{ inputs.units }}
+        LT_EXTERNAL_ID: ${{ inputs.external-id }}
+        LT_FAILURE_REASON: ${{ inputs.failure-reason }}
+        LT_METADATA: ${{ inputs.metadata }}
+        LT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+      run: bash "${{ github.action_path }}/report-run.sh"
