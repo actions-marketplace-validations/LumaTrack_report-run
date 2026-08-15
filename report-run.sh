@@ -15,11 +15,14 @@ fail() {
   exit 0
 }
 
-[ -n "${LT_BASE_URL:-}" ] || fail "base-url is required"
 [ -n "${LT_API_KEY:-}" ] || fail "api-key is required"
 [ -n "${LT_AUTOMATION:-}" ] || fail "automation is required"
 
-BASE="${LT_BASE_URL%/}"
+# The hosted service is where nearly every workflow reports, so an empty
+# base-url means that. Composite-action inputs also arrive as empty strings
+# rather than unset, so the default in action.yml is not enough on its own.
+BASE="${LT_BASE_URL:-https://lumatrack.io}"
+BASE="${BASE%/}"
 
 # Default idempotency key: one run per workflow attempt. Set here rather
 # than in action.yml, whose input defaults cannot use expressions.
@@ -27,17 +30,19 @@ if [ -z "${LT_EXTERNAL_ID:-}" ] && [ -n "${GITHUB_RUN_ID:-}" ]; then
   LT_EXTERNAL_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
 fi
 
-# CI statuses map onto the ledger honestly: a cancelled or skipped run did
-# not do the work, so it books as a failure with the reason preserved.
+# Every GitHub job status now maps to a status of its own, so nothing is
+# reported as something it was not. A `skipped` job was gated out: no work, no
+# breakage. A `cancelled` job was interrupted part way. Neither earns value and
+# neither counts as a failure; whether they carry the automation's per-run cost
+# is set per automation in LumaTrack (cancellations are charged by default,
+# skips are not). The reason is preserved so the Pareto can tell them apart.
 STATUS="${LT_STATUS:-success}"
 REASON="${LT_FAILURE_REASON:-}"
 case "$STATUS" in
   success) ;;
   failure) ;;
-  cancelled|skipped)
-    [ -n "$REASON" ] || REASON="ci/$STATUS"
-    STATUS="failure"
-    ;;
+  skipped) [ -n "$REASON" ] || REASON="ci/skipped" ;;
+  cancelled) [ -n "$REASON" ] || REASON="ci/cancelled" ;;
   *) fail "status must be success, failure, cancelled, or skipped (got '$STATUS')" ;;
 esac
 

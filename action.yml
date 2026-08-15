@@ -9,8 +9,11 @@ branding:
 
 inputs:
   base-url:
-    description: "Your LumaTrack host, e.g. https://lumatrack.example.com"
-    required: true
+    description: >-
+      Your LumaTrack host. Defaults to https://lumatrack.io; set it only if you
+      run LumaTrack on your own domain.
+    required: false
+    default: "https://lumatrack.io"
   api-key:
     description: "LumaTrack API key (store it in secrets)"
     required: true
@@ -20,8 +23,9 @@ inputs:
   status:
     description: >-
       success, failure, cancelled, or skipped. Pass the job status
-      expression (job.status) to report honestly; cancelled and skipped
-      book as failures with the reason preserved.
+      expression (job.status) to report honestly; each maps to a status of
+      its own, and neither skipped nor cancelled counts as a failure.
+      Reasons are preserved.
     required: false
     default: success
   duration-seconds:
