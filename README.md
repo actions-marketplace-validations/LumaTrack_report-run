@@ -13,22 +13,27 @@ you define.
   if: always()
   uses: LumaTrack/report-run@v1
   with:
-    base-url: ${{ vars.LUMATRACK_URL }}
     api-key: ${{ secrets.LUMATRACK_KEY }}
     automation: deploy-pipeline
     status: ${{ job.status }}
 ```
 
+Runs report to `https://lumatrack.io` by default. On a self-hosted or custom
+domain, add `base-url: ${{ vars.LUMATRACK_URL }}`.
+
 `if: always()` makes failures report too; they cost money and save
 nothing, and the ledger prices that honestly. `status` accepts the raw
-`${{ job.status }}` value: `cancelled` and `skipped` book as failures
-with the reason preserved.
+`${{ job.status }}` value: `skipped` and `cancelled` each book as
+themselves. Neither earns value and neither inflates your failure count; a
+gated-out job did nothing, an interrupted one did not finish. Whether they
+carry the per-run cost is set per automation in LumaTrack. Both keep their
+reason (`ci/skipped`, `ci/cancelled`).
 
 ## Inputs
 
 | Input | Required | Notes |
 |---|---|---|
-| `base-url` | yes | Your LumaTrack host |
+| `base-url` | no | Defaults to `https://lumatrack.io`; set it for a self-hosted or custom domain |
 | `api-key` | yes | Store in repository or organization secrets |
 | `automation` | yes | The automation slug this workflow reports as |
 | `status` | no | `success` (default), `failure`, `cancelled`, `skipped` |
